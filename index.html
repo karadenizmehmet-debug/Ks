@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.2', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.3', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -98,6 +98,14 @@ const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const CATS=['Banka','Okul','E-posta','Sosyal medya','Alışveriş','Resmi (e-Devlet)','Diğer'];
 const catOf=e=>CATS.includes(e.cat)?e.cat:'Diğer';
 let catF='';
+const tcList=()=>S.entries.filter(e=>e.tc);
+const realList=()=>S.entries.filter(e=>!e.tc);
+function tcValid(v){
+  if(!/^[1-9]\d{10}$/.test(v))return false;
+  const d=[...v].map(Number);
+  const a=(((d[0]+d[2]+d[4]+d[6]+d[8])*7-(d[1]+d[3]+d[5]+d[7]))%10+10)%10;
+  return a===d[9]&&d.slice(0,10).reduce((x,y)=>x+y,0)%10===d[10];
+}
 const fmtD=t=>t?new Date(t).toLocaleDateString('tr-TR'):'?';
 const S={key:null,salt:null,iter:ITER,entries:[]};
 let fails=0, cbT=0, idleT=0, hiddenAt=0, toastT=0;
@@ -268,12 +276,12 @@ function listView(q=''){
   $('#app').innerHTML=`<input type="search" id="q" placeholder="Ara…" value="${esc(q)}" autocomplete="off" style="margin-bottom:12px"><div class="chips" id="chips"></div><div id="lst"></div><button class="fab" id="add" aria-label="Ekle">＋</button>`;
   const draw=()=>{
     const t=$('#q').value.trim().toLocaleLowerCase('tr');
-    const used=CATS.filter(c=>S.entries.some(e=>catOf(e)===c));
+    const used=CATS.filter(c=>realList().some(e=>catOf(e)===c));
     if(catF&&!used.includes(catF))catF='';
     $('#chips').innerHTML=used.length>1?['',...used].map(c=>`<button class="chip${c===catF?' on':''}" data-c="${esc(c)}">${c?esc(c):'Tümü'}</button>`).join(''):'';
-    const L=S.entries.filter(e=>(!catF||catOf(e)===catF)&&(!t||(e.title+' '+e.user+' '+e.url).toLocaleLowerCase('tr').includes(t))).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
+    const L=realList().filter(e=>(!catF||catOf(e)===catF)&&(!t||(e.title+' '+e.user+' '+e.url).toLocaleLowerCase('tr').includes(t))).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
     $('#lst').innerHTML=L.length?L.map(e=>`<div class="item" data-id="${esc(e.id)}"><div class="av">${esc((e.title[0]||'?').toLocaleUpperCase('tr'))}</div><div class="tx"><b>${esc(e.title)}</b><span>${esc(catOf(e))} · ${esc(e.user||'—')}</span></div><button class="ib" data-cp="${esc(e.id)}" aria-label="Şifreyi kopyala">📋</button></div>`).join('')
-      :`<div class="empty"><big>🗝️</big>${S.entries.length?'Sonuç yok.':'Henüz şifre yok.<br>Sağ alttaki ＋ ile ekle.'}</div>`;
+      :`<div class="empty"><big>🗝️</big>${realList().length?'Sonuç yok.':'Henüz şifre yok.<br>Sağ alttaki ＋ ile ekle.'}</div>`;
   };
   draw();
   $('#q').addEventListener('input',draw);
@@ -315,7 +323,10 @@ function entryForm(e){
   const m=modal(`<form id="ef"><h2>${isNew?'Yeni şifre':'Düzenle'}</h2>
     <label>Başlık (site / uygulama) *</label><input type="text" id="t" value="${esc(e.title)}" autocomplete="off" required>
     <label>Kategori</label><select id="c">${CATS.map(c=>`<option${c===catOf(e)?' selected':''}>${esc(c)}</option>`).join('')}</select>
-    <label>Kullanıcı adı / e-posta</label><input type="text" id="u" value="${esc(e.user)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label>Kullanıcı adı / e-posta</label>
+    <label class="c" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-weight:500;color:var(--tx)"><input type="checkbox" id="tcb"> TC kimlik no</label>
+    <select id="tcs" hidden style="margin-bottom:6px"></select>
+    <input type="text" id="u" value="${esc(e.user)}" autocomplete="off" autocapitalize="off" spellcheck="false">
     <label>Şifre</label>${pwInput('pw')}
     <div class="bar"><i id="sb"></i></div>
     <button type="button" class="link" id="gt" style="padding-left:0">🎲 Güçlü şifre üret</button>
@@ -330,6 +341,16 @@ function entryForm(e){
   const pw=m.querySelector('#pw');pw.value=e.pass;
   const upd=()=>{const s=strength(pw.value),b=m.querySelector('#sb');b.style.width=pw.value?s[2]+'%':'0';b.style.background=s[1]};
   pw.addEventListener('input',upd);upd();
+  const tcb=m.querySelector('#tcb'),tcs=m.querySelector('#tcs'),uf=m.querySelector('#u');
+  const fillTc=()=>{const x=tcList().find(i=>i.id===tcs.value);if(x)uf.value=x.no};
+  tcb.onchange=()=>{
+    if(!tcb.checked){tcs.hidden=true;return}
+    const L=tcList();
+    if(!L.length){tcb.checked=false;toast('Önce Ayarlar > TC kimlik kayıtları bölümünden ekle');return}
+    tcs.innerHTML=L.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');
+    tcs.hidden=false;fillTc();
+  };
+  tcs.onchange=fillTc;
   m.querySelector('#cx').onclick=()=>m.close();
   m.querySelector('#gt').onclick=()=>{const g=m.querySelector('#gen');g.hidden=!g.hidden};
   m.querySelector('#gl').oninput=ev=>m.querySelector('#gv').textContent=ev.target.value;
@@ -354,9 +375,10 @@ function entryForm(e){
 /* ---------- ayarlar / yedek ---------- */
 function settings(){
   const m=modal(`<h2>Ayarlar</h2>
-    <p class="muted">${S.entries.length} kayıt · Sürüm ${VER}</p>
+    <p class="muted">${realList().length} kayıt · Sürüm ${VER}</p>
     <button class="btn sec full" data-a="bk">💾 Şifreli yedek indir</button>
     <button class="btn sec full" data-a="rs">📥 Yedekten geri yükle</button>
+    <button class="btn sec full" data-a="tc">🪪 TC kimlik kayıtları</button>
     <button class="btn sec full" data-a="mp">🔑 Ana şifreyi değiştir</button>
     <button class="btn sec full" data-a="x">Kapat</button>`);
   m.onclick=ev=>{
@@ -365,7 +387,35 @@ function settings(){
     if(a==='bk'){const b=getBlob();if(!b)return;const d=new Date().toISOString().slice(0,10);download(`sifre-kasasi-yedek-${d}.json`,JSON.stringify(b));toast('Yedek indirildi. Ana şifre olmadan açılamaz.')}
     if(a==='rs'){m.close();$('#imp').click()}
     if(a==='mp'){m.close();changeMaster()}
+    if(a==='tc'){m.close();tcSettings()}
   };
+}
+function tcSettings(){
+  const m=modal('<div id="tcb"></div>');
+  const draw=()=>{
+    const L=tcList();
+    m.querySelector('.sheet').innerHTML=`<h2>TC kimlik kayıtları</h2><p class="muted">İsimle kaydet; şifre eklerken "TC kimlik no" kutusundan seçersin. Şifreli saklanır.</p>
+    ${L.map(i=>`<div class="f"><div class="v"><div class="k">${esc(i.name)}</div><div class="pw">${esc(i.no.slice(0,3))}•••••${esc(i.no.slice(-3))}</div></div><button class="ib" data-d="${esc(i.id)}" aria-label="Sil">🗑️</button></div>`).join('')}
+    <form id="tf"><label>İsim</label><input type="text" id="tn" autocomplete="off" placeholder="Ör. Ben, Eşim">
+    <label>TC kimlik no (11 hane)</label><input type="text" id="tv" inputmode="numeric" maxlength="11" autocomplete="off">
+    <div class="err" id="er"></div>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn sec grow" id="cx">Kapat</button><button class="btn grow">Ekle</button></div></form>`;
+    m.querySelector('#cx').onclick=()=>m.close();
+    m.querySelector('#tf').onsubmit=async ev=>{
+      ev.preventDefault();const n=m.querySelector('#tn').value.trim(),v=m.querySelector('#tv').value.trim(),er=m.querySelector('#er');
+      if(!n)return er.textContent='İsim yaz.';
+      if(!tcValid(v))return er.textContent='TC kimlik no geçersiz.';
+      const old=S.entries;S.entries=[...old,{id:uid(),tc:true,name:n,no:v}];
+      try{await persist();draw();toast('Eklendi')}catch{S.entries=old;er.textContent='Kaydedilemedi.'}
+    };
+    m.querySelector('.sheet').onclick=async ev=>{
+      const b=ev.target.closest('[data-d]');if(!b)return;
+      if(!await ask('Bu TC kaydı silinsin mi? Şifre kayıtlarındaki kullanıcı adları değişmez.','Sil'))return;
+      const old=S.entries;S.entries=old.filter(i=>i.id!==b.dataset.d);
+      try{await persist();draw()}catch{S.entries=old;toast('Kaydedilemedi')}
+    };
+  };
+  draw();
 }
 function changeMaster(){
   const m=modal(`<form id="cf"><h2>Ana şifreyi değiştir</h2>
@@ -405,7 +455,7 @@ $('#imp').addEventListener('change',async ev=>{
       const salt=fromB64(blob.salt),key=await derive(m.querySelector('#p').value,salt,blob.iter),entries=await openBlob(blob,key);
       if(getBlob()&&!(await ask('Mevcut kasa silinip yedek yüklenecek. Devam?','Geri yükle')))return m.close();
       localStorage.setItem(KEY,JSON.stringify(blob));
-      S.key=key;S.salt=salt;S.iter=blob.iter;S.entries=entries;m.close();render();toast(entries.length+' kayıt yüklendi');
+      S.key=key;S.salt=salt;S.iter=blob.iter;S.entries=entries;m.close();render();toast(entries.filter(i=>!i.tc).length+' kayıt yüklendi');
     }catch{er.textContent='Şifre yanlış ya da dosya bozuk.';b.disabled=false}
   };
 });
