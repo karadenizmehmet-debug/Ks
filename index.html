@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.1', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.2', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -98,6 +98,7 @@ const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const CATS=['Banka','Okul','E-posta','Sosyal medya','Alışveriş','Resmi (e-Devlet)','Diğer'];
 const catOf=e=>CATS.includes(e.cat)?e.cat:'Diğer';
 let catF='';
+const fmtD=t=>t?new Date(t).toLocaleDateString('tr-TR'):'?';
 const S={key:null,salt:null,iter:ITER,entries:[]};
 let fails=0, cbT=0, idleT=0, hiddenAt=0, toastT=0;
 
@@ -290,10 +291,13 @@ function detail(id){
   const row=(k,v,key,secret)=>v?`<div class="f"><div class="v"><div class="k">${k}</div><div class="${secret?'pw':''}" data-val="${key}">${secret?'••••••••••':esc(v)}</div></div>${secret?`<button class="ib" data-show="${key}" aria-label="Göster">👁️</button>`:''}<button class="ib" data-c="${key}" aria-label="Kopyala">📋</button></div>`:'';
   const m=modal(`<h2>${esc(e.title)}</h2>
     ${row('Kategori',catOf(e),'cat')}${row('Kullanıcı adı',e.user,'user')}${row('Şifre',e.pass,'pass',true)}${row('Adres',e.url,'url')}${row('Not',e.note,'note')}
+    ${(e.hist&&e.hist.length)?`<div class="k" style="margin-top:12px;font-size:12px;color:var(--mut);font-weight:600">ESKİ ŞİFRELER</div>`+[...e.hist].reverse().map((h,i)=>`<div class="f"><div class="v"><div class="k">${esc(fmtD(h.from))} – ${esc(fmtD(h.to))}</div><div class="pw" data-h="${i}">••••••••••</div></div><button class="ib" data-hs="${i}" aria-label="Göster">👁️</button><button class="ib" data-hc="${i}" aria-label="Kopyala">📋</button></div>`).join(''):''}
     <div class="row" style="margin-top:14px"><button class="btn sec grow" data-x>Kapat</button><button class="btn sec grow" data-ed>Düzenle</button><button class="btn bad grow" data-del>Sil</button></div>`);
   m.onclick=async ev=>{
     const t=ev.target;
     if(t.closest('[data-c]')){const k=t.closest('[data-c]').dataset.c;copy(k==='cat'?catOf(e):e[k],{cat:'Kategori',user:'Kullanıcı adı',pass:'Şifre',url:'Adres',note:'Not'}[k])}
+    else if(t.closest('[data-hs]')){const i=+t.closest('[data-hs]').dataset.hs,h=[...e.hist].reverse()[i],el=m.querySelector('[data-h="'+i+'"]');el.textContent=el.textContent.startsWith('•')?h.p:'••••••••••'}
+    else if(t.closest('[data-hc]')){const h=[...e.hist].reverse()[+t.closest('[data-hc]').dataset.hc];copy(h.p,'Eski şifre')}
     else if(t.closest('[data-show]')){const el=m.querySelector('[data-val=pass]');el.textContent=el.textContent.startsWith('•')?e.pass:'••••••••••'}
     else if(t.closest('[data-x]'))m.close();
     else if(t.closest('[data-ed]')){m.close();entryForm(e)}
@@ -336,7 +340,10 @@ function entryForm(e){
   m.querySelector('#ef').onsubmit=async ev=>{
     ev.preventDefault();
     const t=m.querySelector('#t').value.trim();if(!t)return;
-    const nx={id:e.id,title:t,cat:m.querySelector('#c').value,user:m.querySelector('#u').value.trim(),pass:pw.value,url:m.querySelector('#w').value.trim(),note:m.querySelector('#n').value.trim(),ts:Date.now()};
+    const changed=!isNew&&e.pass&&e.pass!==pw.value,now=Date.now();
+    const hist=[...(e.hist||[])];
+    if(changed){hist.push({p:e.pass,from:e.pts||e.ts,to:now});while(hist.length>20)hist.shift()}
+    const nx={id:e.id,title:t,hist,pts:(isNew||changed)?now:(e.pts||e.ts),cat:m.querySelector('#c').value,user:m.querySelector('#u').value.trim(),pass:pw.value,url:m.querySelector('#w').value.trim(),note:m.querySelector('#n').value.trim(),ts:Date.now()};
     const old=S.entries;
     S.entries=isNew?[...old,nx]:old.map(i=>i.id===e.id?nx:i);
     try{await persist();m.close();listView();toast('Kaydedildi')}catch{S.entries=old;toast('Kaydedilemedi (depolama dolu olabilir)')}
