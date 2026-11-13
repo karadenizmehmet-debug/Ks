@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.5', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.6', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -280,14 +280,15 @@ function listView(q=''){
   $('#app').innerHTML=`<input type="search" id="q" placeholder="Ara…" value="${esc(q)}" autocomplete="off" style="margin-bottom:12px"><div class="chips" id="chips"></div><select id="pf" hidden style="margin-bottom:10px"></select><div id="lst"></div><button class="fab" id="add" aria-label="Ekle">＋</button>`;
   const draw=()=>{
     const t=$('#q').value.trim().toLocaleLowerCase('tr');
-    const used=CATS.filter(c=>realList().some(e=>catOf(e)===c));
-    if(catF&&!used.includes(catF))catF='';
-    $('#chips').innerHTML=used.length>1?['',...used].map(c=>`<button class="chip${c===catF?' on':''}" data-c="${esc(c)}">${c?esc(c):'Tümü'}</button>`).join(''):'';
     const P=tcList();if(perF&&!P.some(i=>i.id===perF))perF='';
     $('#pf').hidden=!P.length;
     $('#pf').innerHTML='<option value="">Tüm kişiler</option>'+P.map(i=>`<option value="${esc(i.id)}"${i.id===perF?' selected':''}>${esc(i.name)}</option>`).join('');
     const pno=perF?P.find(i=>i.id===perF).no:'';
-    const L=realList().filter(e=>(!catF||catOf(e)===catF)&&(!pno||e.user===pno)&&(!t||(e.title+' '+e.user+' '+e.url).toLocaleLowerCase('tr').includes(t))).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
+    const base=realList().filter(e=>(!pno||e.user===pno)&&(!t||(e.title+' '+e.user+' '+e.url).toLocaleLowerCase('tr').includes(t)));
+    const used=CATS.filter(c=>base.some(e=>catOf(e)===c));
+    if(catF&&!used.includes(catF))catF='';
+    $('#chips').innerHTML=used.length>1||catF?[['',base.length],...used.map(c=>[c,base.filter(e=>catOf(e)===c).length])].map(([c,n])=>`<button class="chip${c===catF?' on':''}" data-c="${esc(c)}">${c?esc(c):'Tümü'} (${n})</button>`).join(''):'';
+    const L=base.filter(e=>!catF||catOf(e)===catF).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
     $('#lst').innerHTML=L.length?L.map(e=>`<div class="item" data-id="${esc(e.id)}"><div class="av">${esc((e.title[0]||'?').toLocaleUpperCase('tr'))}</div><div class="tx"><b>${esc(e.title)}</b><span>${esc(catOf(e))} · ${esc(e.user||'—')}</span></div><button class="ib" data-cp="${esc(e.id)}" aria-label="Şifreyi kopyala">📋</button></div>`).join('')
       :`<div class="empty"><big>🗝️</big>${realList().length?'Sonuç yok.':'Henüz şifre yok.<br>Sağ alttaki ＋ ile ekle.'}</div>`;
   };
