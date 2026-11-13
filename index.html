@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.6', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.7', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -202,8 +202,8 @@ function lock(){
 function bumpIdle(){clearTimeout(idleT);if(S.key)idleT=setTimeout(()=>{lock();toast('Hareketsizlik nedeniyle kilitlendi')},3*60*1000)}
 ['pointerdown','keydown','scroll'].forEach(ev=>addEventListener(ev,bumpIdle,{passive:true}));
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden)hiddenAt=Date.now();
-  else if(S.key&&hiddenAt&&Date.now()-hiddenAt>30000){lock();toast('Kilitlendi')}
+  if(document.hidden)clearTimeout(idleT);
+  else bumpIdle();
 });
 
 /* ---------- ekranlar ---------- */
