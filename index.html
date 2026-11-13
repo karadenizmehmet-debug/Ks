@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.8', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.9', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -333,8 +333,8 @@ function entryForm(e){
     <label>Başlık (site / uygulama) *</label><input type="text" id="t" value="${esc(e.title)}" autocomplete="off" required>
     <label>Kategori</label><select id="c">${CATS.map(c=>`<option${c===catOf(e)?' selected':''}>${esc(c)}</option>`).join('')}</select>
     <label>Kullanıcı adı / e-posta</label>
+    <select id="tcs" style="margin-bottom:6px"></select>
     <label class="c" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-weight:500;color:var(--tx)"><input type="checkbox" id="tcb"> TC kimlik no</label>
-    <select id="tcs" hidden style="margin-bottom:6px"></select>
     <input type="text" id="u" value="${esc(e.user)}" autocomplete="off" autocapitalize="off" spellcheck="false">
     <label>Şifre</label>${pwInput('pw')}
     <div class="bar"><i id="sb"></i></div>
@@ -351,15 +351,18 @@ function entryForm(e){
   const upd=()=>{const s=strength(pw.value),b=m.querySelector('#sb');b.style.width=pw.value?s[2]+'%':'0';b.style.background=s[1]};
   pw.addEventListener('input',upd);upd();
   const tcb=m.querySelector('#tcb'),tcs=m.querySelector('#tcs'),uf=m.querySelector('#u');
-  const fillTc=()=>{const x=tcList().find(i=>i.id===tcs.value);if(x)uf.value=x.no};
+  const P=tcList();
+  tcs.hidden=!P.length;
+  tcs.innerHTML='<option value="">İsim seç…</option>'+P.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');
+  const sel=()=>P.find(i=>i.id===tcs.value);
   tcb.onchange=()=>{
-    if(!tcb.checked){tcs.hidden=true;return}
-    const L=tcList();
-    if(!L.length){tcb.checked=false;toast('Önce Ayarlar > TC kimlik kayıtları bölümünden ekle');return}
-    tcs.innerHTML=L.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');
-    tcs.hidden=false;fillTc();
+    const x=sel();
+    if(!tcb.checked){if(x&&uf.value===x.no)uf.value='';return}
+    if(!P.length){tcb.checked=false;toast('Önce Ayarlar > TC kimlik kayıtları bölümünden ekle');return}
+    if(!x){tcb.checked=false;toast('Önce isim seç');return}
+    uf.value=x.no;
   };
-  tcs.onchange=fillTc;
+  tcs.onchange=()=>{const x=sel();if(tcb.checked){if(x)uf.value=x.no;else{tcb.checked=false}}};
   m.querySelector('#cx').onclick=()=>m.close();
   m.querySelector('#gt').onclick=()=>{const g=m.querySelector('#gen');g.hidden=!g.hidden};
   m.querySelector('#gl').oninput=ev=>m.querySelector('#gv').textContent=ev.target.value;
