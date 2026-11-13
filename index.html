@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="author" content="Mehmet Karadeniz, 2026-2027">
+<meta name="copyright" content="Mehmet Karadeniz, 2026-2027">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Şifre Kasası</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#0f172a;--mut:#64748b;--ac:#0f766e;--ac2:#ccfbf1;--bd:#e2e8f0;--bad:#dc2626;--ok:#16a34a;--warn:#d97706}
+[data-theme=dark]{--bg:#0b1220;--card:#151e30;--tx:#e5e7eb;--mut:#94a3b8;--ac:#2dd4bf;--ac2:#134e4a;--bd:#263248;--bad:#f87171;--ok:#4ade80;--warn:#fbbf24}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:6px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--card);border-bottom:1px solid var(--bd)}
+header h1{flex:1;margin:0;font-size:19px;display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+header h1 small{font-size:12px;font-weight:600;color:var(--mut)}
+.ib{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--tx);font-size:20px;cursor:pointer}
+.ib:active{background:var(--ac2)}
+main{flex:1;width:100%;max-width:560px;margin:0 auto;padding:14px 14px 96px}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 10px calc(14px + env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+label{display:block;font-size:13px;font-weight:600;color:var(--mut);margin:12px 0 4px}
+input[type=text],input[type=password],input[type=url],textarea,input[type=search]{width:100%;padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+input:focus,textarea:focus{outline:2px solid var(--ac);border-color:transparent}
+textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;align-items:center}
+.row>.grow{flex:1;min-width:0}
+.btn{border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:700;background:var(--ac);color:#fff;cursor:pointer}
+[data-theme=dark] .btn{color:#042f2e}
+.btn.sec{background:var(--ac2);color:var(--ac)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.full{width:100%;margin-top:16px}
+.btn:disabled{opacity:.5}
+.link{background:none;border:0;color:var(--ac);font:inherit;font-weight:600;padding:8px;cursor:pointer}
+.muted{color:var(--mut);font-size:14px}
+.warn{background:var(--ac2);border-radius:12px;padding:10px 12px;font-size:14px;margin:12px 0}
+.item{display:flex;align-items:center;gap:10px;padding:12px;margin-bottom:8px;background:var(--card);border:1px solid var(--bd);border-radius:14px;cursor:pointer}
+.item .av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--ac2);color:var(--ac);display:grid;place-items:center;font-weight:800}
+.item .tx{flex:1;min-width:0}
+.item b,.item span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item span{font-size:13px;color:var(--mut)}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:var(--ac);color:#fff;font-size:30px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+[data-theme=dark] .fab{color:#042f2e}
+.ov{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:560px;max-height:92dvh;overflow:auto;background:var(--card);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet h2{margin:0 0 4px;font-size:18px}
+.f{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.f:last-of-type{border-bottom:0}
+.f .v{flex:1;min-width:0;word-break:break-all}
+.f .k{font-size:12px;color:var(--mut);font-weight:600}
+.pw{font-family:ui-monospace,Menlo,Consolas,monospace}
+.bar{height:6px;border-radius:3px;background:var(--bd);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;transition:width .2s,background .2s}
+.gen{background:var(--bg);border-radius:12px;padding:10px 12px;margin-top:8px}
+.gen label.c{display:inline-flex;align-items:center;gap:6px;margin:6px 12px 0 0;font-weight:500;color:var(--tx)}
+#toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.empty big{display:block;font-size:44px}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔐 Şifre Kasası <small id="ver"></small></h1>
+  <button class="ib" id="shareBtn" title="Uygulamayı paylaş" aria-label="Paylaş">📤</button>
+  <button class="ib" id="themeBtn" title="Gece / gündüz" aria-label="Tema">🌙</button>
+  <button class="ib" id="lockBtn" title="Kilitle" aria-label="Kilitle" hidden>🔒</button>
+  <button class="ib" id="setBtn" title="Ayarlar" aria-label="Ayarlar" hidden>⚙️</button>
+</header>
+<main id="app"></main>
+<footer>© Mehmet Karadeniz, 2026-2027 · Veriler yalnızca bu cihazda, şifreli saklanır.</footer>
+<div id="toast"></div>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+<script>
+(()=>{
+'use strict';
+const VER='1.0', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const te=new TextEncoder(), td=new TextDecoder();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const toB64=b=>{const u=new Uint8Array(b);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const S={key:null,salt:null,iter:ITER,entries:[]};
+let fails=0, cbT=0, idleT=0, hiddenAt=0, toastT=0;
+
+/* ---------- kripto ---------- */
+async function derive(pw,salt,iter){
+  const k=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function seal(entries){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},S.key,te.encode(JSON.stringify(entries)));
+  return {v:1,iter:S.iter,salt:toB64(S.salt),iv:toB64(iv),data:toB64(ct)};
+}
+async function openBlob(blob,key){
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(blob.iv)},key,fromB64(blob.data));
+  const arr=JSON.parse(td.decode(pt));
+  if(!Array.isArray(arr))throw new Error('bad');
+  return arr;
+}
+const validBlob=b=>b&&b.v===1&&typeof b.salt==='string'&&typeof b.iv==='string'&&typeof b.data==='string'&&Number.isInteger(b.iter)&&b.iter>=100000&&b.iter<=5000000;
+const getBlob=()=>{try{const b=JSON.parse(localStorage.getItem(KEY));return validBlob(b)?b:null}catch{return null}};
+async function persist(){
+  const blob=await seal(S.entries);
+  localStorage.setItem(KEY,JSON.stringify(blob));
+}
+
+/* ---------- yardımcılar ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200)}
+async function copy(text,label){
+  try{await navigator.clipboard.writeText(text);toast(label+' kopyalandı (30 sn sonra silinir)');clearTimeout(cbT);cbT=setTimeout(()=>navigator.clipboard.writeText('').catch(()=>{}),30000)}
+  catch{toast('Kopyalanamadı')}
+}
+function modal(html){
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML='<div class="sheet">'+html+'</div>';
+  document.body.appendChild(ov);
+  ov.close=()=>ov.remove();
+  return ov;
+}
+function ask(msg,okText='Evet',bad=true){
+  return new Promise(res=>{
+    const m=modal(`<h2>Emin misin?</h2><p>${esc(msg)}</p><div class="row"><button class="btn sec grow" data-n>Vazgeç</button><button class="btn ${bad?'bad':''} grow" data-y>${esc(okText)}</button></div>`);
+    m.querySelector('[data-n]').onclick=()=>{m.close();res(false)};
+    m.querySelector('[data-y]').onclick=()=>{m.close();res(true)};
+  });
+}
+function randInt(n){const max=Math.floor(0x100000000/n)*n;let x;do{x=crypto.getRandomValues(new Uint32Array(1))[0]}while(x>=max);return x%n}
+function genPass(len,o){
+  const sets=[];
+  if(o.lower)sets.push('abcdefghijkmnopqrstuvwxyz');
+  if(o.upper)sets.push('ABCDEFGHJKLMNPQRSTUVWXYZ');
+  if(o.digit)sets.push('23456789');
+  if(o.sym)sets.push('!@#$%&*?-_+=');
+  if(!sets.length)sets.push('abcdefghijkmnopqrstuvwxyz');
+  const all=sets.join('');
+  const out=sets.map(s=>s[randInt(s.length)]);
+  while(out.length<len)out.push(all[randInt(all.length)]);
+  for(let i=out.length-1;i>0;i--){const j=randInt(i+1);[out[i],out[j]]=[out[j],out[i]]}
+  return out.join('');
+}
+function strength(p){
+  let c=0;if(/[a-zçğıöşü]/.test(p))c++;if(/[A-ZÇĞİÖŞÜ]/.test(p))c++;if(/\d/.test(p))c++;if(/[^\w]/.test(p))c++;
+  const s=p.length>=14&&c>=3?3:p.length>=10&&c>=3?2:p.length>=8&&c>=2?1:0;
+  return [['Zayıf','#dc2626',25],['Orta','#d97706',50],['İyi','#65a30d',75],['Çok güçlü','#16a34a',100]][s];
+}
+function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)}
+function download(name,text){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+const pwInput=(id,ph='')=>`<div class="row"><input class="grow" type="password" id="${id}" placeholder="${ph}" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="ib" data-eye="${id}" aria-label="Göster/gizle">👁️</button></div>`;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-eye]');if(!b)return;const i=document.getElementById(b.dataset.eye);i.type=i.type==='password'?'text':'password'});
+
+/* ---------- tema / paylaş / sürüm ---------- */
+function setTheme(t){
+  document.documentElement.dataset.theme=t;
+  try{localStorage.setItem(TH,t)}catch{}
+  $('#themeBtn').textContent=t==='dark'?'☀️':'🌙';
+  $('#themeBtn').title=t==='dark'?'Gündüz modu':'Gece modu';
+  document.querySelector('meta[name=theme-color]').content=t==='dark'?'#0b1220':'#0f766e';
+}
+async function share(){
+  const d={title:'Şifre Kasası',text:'Şifre Kasası: şifrelerini telefonunda şifreli sakla.',url:location.href.split('#')[0]};
+  try{if(navigator.share)await navigator.share(d);else{await navigator.clipboard.writeText(d.url);toast('Uygulama bağlantısı kopyalandı')}}catch{}
+}
+
+/* ---------- kilit ---------- */
+function lock(){
+  S.key=null;S.salt=null;S.entries=[];
+  document.querySelectorAll('.ov').forEach(o=>o.remove());
+  render();
+}
+function bumpIdle(){clearTimeout(idleT);if(S.key)idleT=setTimeout(()=>{lock();toast('Hareketsizlik nedeniyle kilitlendi')},3*60*1000)}
+['pointerdown','keydown','scroll'].forEach(ev=>addEventListener(ev,bumpIdle,{passive:true}));
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)hiddenAt=Date.now();
+  else if(S.key&&hiddenAt&&Date.now()-hiddenAt>30000){lock();toast('Kilitlendi')}
+});
+
+/* ---------- ekranlar ---------- */
+function render(){
+  const has=!!getBlob();
+  $('#lockBtn').hidden=$('#setBtn').hidden=!S.key;
+  if(!S.key){has?lockView():setupView();return}
+  listView();bumpIdle();
+}
+
+function setupView(){
+  $('#app').innerHTML=`<form class="card" id="f">
+    <h2 style="margin:0">Kasanı oluştur</h2>
+    <p class="muted">Tüm şifrelerin tek bir <b>ana şifre</b> ile şifrelenir. Ana şifre hiçbir yere gönderilmez.</p>
+    <label>Ana şifre (en az 8 karakter)</label>${pwInput('p1')}
+    <div class="bar"><i id="sb"></i></div><div class="muted" id="sl"></div>
+    <label>Ana şifre (tekrar)</label>${pwInput('p2')}
+    <div class="warn">⚠️ Ana şifreyi unutursan şifrelerin <b>kurtarılamaz</b>. Bir kâğıda yazıp güvenli bir yerde sakla.</div>
+    <label style="display:flex;gap:8px;align-items:center;font-weight:500;color:var(--tx)"><input type="checkbox" id="ok"> Anladım</label>
+    <div class="err" id="er"></div>
+    <button class="btn full" id="go">Kasayı oluştur</button>
+    <button type="button" class="link" id="rest" style="width:100%;margin-top:8px">Yedekten geri yükle</button>
+  </form>`;
+  const p1=$('#p1');
+  p1.addEventListener('input',()=>{const s=strength(p1.value);$('#sb').style.width=p1.value?s[2]+'%':'0';$('#sb').style.background=s[1];$('#sl').textContent=p1.value?s[0]:''});
+  $('#rest').onclick=()=>$('#imp').click();
+  $('#f').onsubmit=async e=>{
+    e.preventDefault();const er=$('#er');
+    if(p1.value.length<8)return er.textContent='En az 8 karakter olmalı.';
+    if(p1.value!==$('#p2').value)return er.textContent='Şifreler aynı değil.';
+    if(!$('#ok').checked)return er.textContent='Lütfen uyarıyı onayla.';
+    er.textContent='';const b=$('#go');b.disabled=true;b.textContent='Hazırlanıyor…';
+    try{
+      S.salt=crypto.getRandomValues(new Uint8Array(16));S.iter=ITER;S.entries=[];
+      S.key=await derive(p1.value,S.salt,S.iter);
+      await persist();
+      try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch{}
+      render();
+    }catch{S.key=null;er.textContent='Kasa oluşturulamadı.';b.disabled=false;b.textContent='Kasayı oluştur'}
+  };
+}
+
+function lockView(){
+  $('#app').innerHTML=`<form class="card" id="f">
+    <h2 style="margin:0">Kasa kilitli</h2>
+    <label>Ana şifre</label>${pwInput('p1')}
+    <div class="err" id="er"></div>
+    <button class="btn full" id="go">Aç</button>
+    <button type="button" class="link" id="rest" style="width:100%;margin-top:8px">Yedekten geri yükle</button>
+  </form>`;
+  $('#rest').onclick=()=>$('#imp').click();
+  $('#f').onsubmit=async e=>{
+    e.preventDefault();const b=$('#go'),er=$('#er'),blob=getBlob();
+    if(!blob)return render();
+    b.disabled=true;b.textContent='Açılıyor…';er.textContent='';
+    try{
+      const salt=fromB64(blob.salt);
+      const key=await derive($('#p1').value,salt,blob.iter);
+      const entries=await openBlob(blob,key);
+      S.key=key;S.salt=salt;S.iter=blob.iter;S.entries=entries;fails=0;render();
+    }catch{
+      fails++;await sleep(Math.min(fails,5)*800);
+      er.textContent='Ana şifre yanlış.';b.disabled=false;b.textContent='Aç';$('#p1').select();
+    }
+  };
+  $('#p1').focus();
+}
+
+function listView(q=''){
+  $('#app').innerHTML=`<input type="search" id="q" placeholder="Ara…" value="${esc(q)}" autocomplete="off" style="margin-bottom:12px"><div id="lst"></div><button class="fab" id="add" aria-label="Ekle">＋</button>`;
+  const draw=()=>{
+    const t=$('#q').value.trim().toLocaleLowerCase('tr');
+    const L=S.entries.filter(e=>!t||(e.title+' '+e.user+' '+e.url).toLocaleLowerCase('tr').includes(t)).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
+    $('#lst').innerHTML=L.length?L.map(e=>`<div class="item" data-id="${esc(e.id)}"><div class="av">${esc((e.title[0]||'?').toLocaleUpperCase('tr'))}</div><div class="tx"><b>${esc(e.title)}</b><span>${esc(e.user||'—')}</span></div><button class="ib" data-cp="${esc(e.id)}" aria-label="Şifreyi kopyala">📋</button></div>`).join('')
+      :`<div class="empty"><big>🗝️</big>${S.entries.length?'Sonuç yok.':'Henüz şifre yok.<br>Sağ alttaki ＋ ile ekle.'}</div>`;
+  };
+  draw();
+  $('#q').addEventListener('input',draw);
+  $('#add').onclick=()=>entryForm();
+  $('#lst').onclick=e=>{
+    const cp=e.target.closest('[data-cp]');
+    if(cp){e.stopPropagation();const x=S.entries.find(i=>i.id===cp.dataset.cp);if(x)copy(x.pass,'Şifre');return}
+    const it=e.target.closest('.item');if(it)detail(it.dataset.id);
+  };
+}
+
+function detail(id){
+  const e=S.entries.find(i=>i.id===id);if(!e)return;
+  const row=(k,v,key,secret)=>v?`<div class="f"><div class="v"><div class="k">${k}</div><div class="${secret?'pw':''}" data-val="${key}">${secret?'••••••••••':esc(v)}</div></div>${secret?`<button class="ib" data-show="${key}" aria-label="Göster">👁️</button>`:''}<button class="ib" data-c="${key}" aria-label="Kopyala">📋</button></div>`:'';
+  const m=modal(`<h2>${esc(e.title)}</h2>
+    ${row('Kullanıcı adı',e.user,'user')}${row('Şifre',e.pass,'pass',true)}${row('Adres',e.url,'url')}${row('Not',e.note,'note')}
+    <div class="row" style="margin-top:14px"><button class="btn sec grow" data-x>Kapat</button><button class="btn sec grow" data-ed>Düzenle</button><button class="btn bad grow" data-del>Sil</button></div>`);
+  m.onclick=async ev=>{
+    const t=ev.target;
+    if(t.closest('[data-c]')){const k=t.closest('[data-c]').dataset.c;copy(e[k],{user:'Kullanıcı adı',pass:'Şifre',url:'Adres',note:'Not'}[k])}
+    else if(t.closest('[data-show]')){const el=m.querySelector('[data-val=pass]');el.textContent=el.textContent.startsWith('•')?e.pass:'••••••••••'}
+    else if(t.closest('[data-x]'))m.close();
+    else if(t.closest('[data-ed]')){m.close();entryForm(e)}
+    else if(t.closest('[data-del]')){
+      if(await ask(`"${e.title}" kaydı silinsin mi? Geri alınamaz.`,'Sil')){
+        S.entries=S.entries.filter(i=>i.id!==id);
+        try{await persist();m.close();listView($('#q')?.value||'');toast('Silindi')}catch{toast('Kaydedilemedi')}
+      }
+    }
+  };
+}
+
+function entryForm(e){
+  const isNew=!e;e=e||{id:uid(),title:'',user:'',pass:'',url:'',note:''};
+  const m=modal(`<form id="ef"><h2>${isNew?'Yeni şifre':'Düzenle'}</h2>
+    <label>Başlık (site / uygulama) *</label><input type="text" id="t" value="${esc(e.title)}" autocomplete="off" required>
+    <label>Kullanıcı adı / e-posta</label><input type="text" id="u" value="${esc(e.user)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label>Şifre</label>${pwInput('pw')}
+    <div class="bar"><i id="sb"></i></div>
+    <button type="button" class="link" id="gt" style="padding-left:0">🎲 Güçlü şifre üret</button>
+    <div class="gen" id="gen" hidden>
+      <div class="row"><span class="muted">Uzunluk</span><input type="range" id="gl" min="8" max="32" value="16" class="grow"><b id="gv">16</b></div>
+      <label class="c"><input type="checkbox" id="g1" checked> a-z</label><label class="c"><input type="checkbox" id="g2" checked> A-Z</label><label class="c"><input type="checkbox" id="g3" checked> 0-9</label><label class="c"><input type="checkbox" id="g4" checked> !@#</label>
+      <button type="button" class="btn sec full" id="gb" style="margin-top:10px">Üret</button>
+    </div>
+    <label>Adres (isteğe bağlı)</label><input type="text" id="w" value="${esc(e.url)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label>Not (isteğe bağlı)</label><textarea id="n">${esc(e.note)}</textarea>
+    <div class="row" style="margin-top:16px"><button type="button" class="btn sec grow" id="cx">Vazgeç</button><button class="btn grow" id="sv">Kaydet</button></div></form>`);
+  const pw=m.querySelector('#pw');pw.value=e.pass;
+  const upd=()=>{const s=strength(pw.value),b=m.querySelector('#sb');b.style.width=pw.value?s[2]+'%':'0';b.style.background=s[1]};
+  pw.addEventListener('input',upd);upd();
+  m.querySelector('#cx').onclick=()=>m.close();
+  m.querySelector('#gt').onclick=()=>{const g=m.querySelector('#gen');g.hidden=!g.hidden};
+  m.querySelector('#gl').oninput=ev=>m.querySelector('#gv').textContent=ev.target.value;
+  m.querySelector('#gb').onclick=()=>{
+    pw.value=genPass(+m.querySelector('#gl').value,{lower:m.querySelector('#g1').checked,upper:m.querySelector('#g2').checked,digit:m.querySelector('#g3').checked,sym:m.querySelector('#g4').checked});
+    pw.type='text';upd();
+  };
+  m.querySelector('#ef').onsubmit=async ev=>{
+    ev.preventDefault();
+    const t=m.querySelector('#t').value.trim();if(!t)return;
+    const nx={id:e.id,title:t,user:m.querySelector('#u').value.trim(),pass:pw.value,url:m.querySelector('#w').value.trim(),note:m.querySelector('#n').value.trim(),ts:Date.now()};
+    const old=S.entries;
+    S.entries=isNew?[...old,nx]:old.map(i=>i.id===e.id?nx:i);
+    try{await persist();m.close();listView();toast('Kaydedildi')}catch{S.entries=old;toast('Kaydedilemedi (depolama dolu olabilir)')}
+  };
+  m.querySelector('#t').focus();
+}
+
+/* ---------- ayarlar / yedek ---------- */
+function settings(){
+  const m=modal(`<h2>Ayarlar</h2>
+    <p class="muted">${S.entries.length} kayıt · Sürüm ${VER}</p>
+    <button class="btn sec full" data-a="bk">💾 Şifreli yedek indir</button>
+    <button class="btn sec full" data-a="rs">📥 Yedekten geri yükle</button>
+    <button class="btn sec full" data-a="mp">🔑 Ana şifreyi değiştir</button>
+    <button class="btn sec full" data-a="x">Kapat</button>`);
+  m.onclick=ev=>{
+    const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;
+    if(a==='x')m.close();
+    if(a==='bk'){const b=getBlob();if(!b)return;const d=new Date().toISOString().slice(0,10);download(`sifre-kasasi-yedek-${d}.json`,JSON.stringify(b));toast('Yedek indirildi. Ana şifre olmadan açılamaz.')}
+    if(a==='rs'){m.close();$('#imp').click()}
+    if(a==='mp'){m.close();changeMaster()}
+  };
+}
+function changeMaster(){
+  const m=modal(`<form id="cf"><h2>Ana şifreyi değiştir</h2>
+    <label>Mevcut ana şifre</label>${pwInput('o')}
+    <label>Yeni ana şifre (en az 8)</label>${pwInput('n1')}
+    <label>Yeni ana şifre (tekrar)</label>${pwInput('n2')}
+    <div class="err" id="er"></div>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn sec grow" id="cx">Vazgeç</button><button class="btn grow" id="go">Değiştir</button></div></form>`);
+  m.querySelector('#cx').onclick=()=>m.close();
+  m.querySelector('#cf').onsubmit=async ev=>{
+    ev.preventDefault();const er=m.querySelector('#er'),b=m.querySelector('#go');
+    const o=m.querySelector('#o').value,n1=m.querySelector('#n1').value,n2=m.querySelector('#n2').value;
+    if(n1.length<8)return er.textContent='Yeni şifre en az 8 karakter olmalı.';
+    if(n1!==n2)return er.textContent='Yeni şifreler aynı değil.';
+    b.disabled=true;er.textContent='Kontrol ediliyor…';
+    const prev={key:S.key,salt:S.salt,iter:S.iter};
+    try{
+      const blob=getBlob();const k=await derive(o,fromB64(blob.salt),blob.iter);await openBlob(blob,k);
+    }catch{er.textContent='Mevcut ana şifre yanlış.';b.disabled=false;return}
+    try{
+      S.salt=crypto.getRandomValues(new Uint8Array(16));S.iter=ITER;S.key=await derive(n1,S.salt,S.iter);
+      await persist();m.close();toast('Ana şifre değişti. Eski yedekler eski şifreyle açılır.');
+    }catch{Object.assign(S,prev);er.textContent='Değiştirilemedi.';b.disabled=false}
+  };
+}
+$('#imp').addEventListener('change',async ev=>{
+  const f=ev.target.files[0];ev.target.value='';if(!f)return;
+  let blob;
+  try{blob=JSON.parse(await f.text())}catch{return toast('Dosya okunamadı')}
+  if(!validBlob(blob))return toast('Geçerli bir yedek dosyası değil');
+  const m=modal(`<form id="rf"><h2>Yedekten geri yükle</h2><p class="muted">Yedeği alırken kullandığın ana şifreyi gir. Mevcut kasanın yerine geçer.</p>${pwInput('p')}<div class="err" id="er"></div>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn sec grow" id="cx">Vazgeç</button><button class="btn grow" id="go">Geri yükle</button></div></form>`);
+  m.querySelector('#cx').onclick=()=>m.close();
+  m.querySelector('#rf').onsubmit=async e2=>{
+    e2.preventDefault();const er=m.querySelector('#er'),b=m.querySelector('#go');b.disabled=true;er.textContent='Açılıyor…';
+    try{
+      const salt=fromB64(blob.salt),key=await derive(m.querySelector('#p').value,salt,blob.iter),entries=await openBlob(blob,key);
+      if(getBlob()&&!(await ask('Mevcut kasa silinip yedek yüklenecek. Devam?','Geri yükle')))return m.close();
+      localStorage.setItem(KEY,JSON.stringify(blob));
+      S.key=key;S.salt=salt;S.iter=blob.iter;S.entries=entries;m.close();render();toast(entries.length+' kayıt yüklendi');
+    }catch{er.textContent='Şifre yanlış ya da dosya bozuk.';b.disabled=false}
+  };
+});
+
+/* ---------- başlangıç ---------- */
+$('#ver').textContent='v'+VER;
+$('#shareBtn').onclick=share;
+$('#themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+$('#lockBtn').onclick=lock;
+$('#setBtn').onclick=settings;
+let th;try{th=localStorage.getItem(TH)}catch{}
+setTheme(th||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
+render();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
