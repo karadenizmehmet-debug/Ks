@@ -88,7 +88,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (()=>{
 'use strict';
-const VER='1.4', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
+const VER='1.5', KEY='sk_vault_v1', TH='sk_theme', ITER=600000;
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const te=new TextEncoder(), td=new TextDecoder();
@@ -250,10 +250,14 @@ function lockView(){
   $('#app').innerHTML=`<form class="card" id="f">
     <h2 style="margin:0">Kasa kilitli</h2>
     <label>Ana şifre</label>${pwInput('p1')}
+    <button type="button" class="link" id="kb" style="padding-left:0"></button>
     <div class="err" id="er"></div>
     <button class="btn full" id="go">Aç</button>
     <button type="button" class="link" id="rest" style="width:100%;margin-top:8px">Yedekten geri yükle</button>
   </form>`;
+  const kbSet=()=>{let n;try{n=localStorage.getItem('sk_kb')!=='abc'}catch{n=true}$('#p1').inputMode=n?'numeric':'text';$('#kb').textContent=n?'🔤 Harfli klavye':'🔢 Sayı klavyesi';$('#p1').focus()};
+  $('#kb').onclick=()=>{let n;try{n=localStorage.getItem('sk_kb')!=='abc';localStorage.setItem('sk_kb',n?'abc':'num')}catch{}kbSet()};
+  kbSet();
   $('#rest').onclick=()=>$('#imp').click();
   $('#f').onsubmit=async e=>{
     e.preventDefault();const b=$('#go'),er=$('#er'),blob=getBlob();
